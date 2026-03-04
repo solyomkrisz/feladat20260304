@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hu">
     <head>
         <meta charset="UTF-8" />
@@ -14,11 +14,190 @@
         <!--!JavaScript-->
         <script src="../javascript/index.js"></script>
     </head>
-    <body>
+    <body class="pb-5">
         <div class="container-fluid">
             <div class="row text-center">
-                <h1 class="display-1">A szerver fut.</h1>
+                <h1 class="display-1">Ételek</h1>
+            </div>
+
+            <div class="row">
+                <div class="col-12 col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title m-0">Étel hozzáadása</h5>
+                        </div>
+                        <form>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="" class="form-label">Étel neve</label>
+                                    <input class="form-control" type="text" name="nev" />
+                                </div>
+                                <div class="mb-3">
+                                    <label for="" class="form-label">Étel ára</label>
+                                    <input class="form-control" type="number" name="ar" />
+                                </div>
+                                <div class="mb-3">
+                                    <label for="" class="form-label">Étel finomsága</label>
+                                    <input class="form-control" type="text" name="finomsag" />
+                                </div>
+                                <div class="mb-3">
+                                    <label for="" class="form-label">Lejárati dátum</label>
+                                    <input class="form-control" type="date" name="lejarati_datum" />
+                                </div>
+                                <div class="mb-3">
+                                    <label for="" class="form-label">Mennyiség</label>
+                                    <input class="form-control" type="number" name="mennyiseg" />
+                                </div>
+                            </div>
+                            <div class="card-footer d-grid">
+                                <button class="btn btn-primary w-100">Feltöltés</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title m-0">Összes étel</div>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table mb-0 text-center">
+                                <thead>
+                                    <tr>
+                                        <th>Név</th>
+                                        <th>Ár</th>
+                                        <th>Finomság</th>
+                                        <th>Lejárati dátum</th>
+                                        <th>Mennyiség</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="card-footer grid">
+                            <button id="deleteButton" class="btn btn-danger w-100">
+                                Kiválasztott törlése
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                displayEtelek();
+                document.querySelector('#deleteButton').addEventListener('click', deleteEtel);
+            });
+
+            document.querySelector('form').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                fetch('/api/etelek', {
+                    method: 'POST',
+                    body: new FormData(this)
+                })
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(`${response.status}: ${response.statusText}`);
+                        }
+
+                        return response.json();
+                    })
+                    .then((data) => {
+                        alert(data.message);
+                        displayEtelek();
+                    })
+                    .catch((error) => console.error(error));
+            });
+
+            function displayEtelek() {
+                fetch('/api/etelek')
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(`${response.status}: ${response.statusText}`);
+                        }
+
+                        return response.json();
+                    })
+                    .then((data) => {
+                        const tbody = document.querySelector('tbody');
+                        tbody.replaceChildren();
+
+                        if (!data.result) return;
+
+                        for (const item of data.result) {
+                            let td;
+
+                            const tr = document.createElement('tr');
+
+                            tr.dataset.id = item.id;
+
+                            td = document.createElement('td');
+                            td.textContent = item.nev;
+                            tr.appendChild(td);
+
+                            td = document.createElement('td');
+                            td.textContent = item.ar;
+                            tr.appendChild(td);
+
+                            td = document.createElement('td');
+                            td.textContent = item.finomsag;
+                            tr.appendChild(td);
+
+                            td = document.createElement('td');
+                            td.textContent = new Date(item.lejarati_datum).toLocaleDateString();
+                            tr.appendChild(td);
+
+                            td = document.createElement('td');
+                            td.textContent = item.mennyiseg;
+                            tr.appendChild(td);
+
+                            tr.addEventListener('click', function () {
+                                const current = document.querySelector(
+                                    "tbody > tr[data-selected='true']"
+                                );
+
+                                if (current) {
+                                    current.dataset.selected = false;
+                                    current.classList.remove('table-active');
+                                }
+
+                                if (current === this) return;
+
+                                this.classList.add('table-active');
+                                this.dataset.selected = true;
+                            });
+
+                            tbody.appendChild(tr);
+                        }
+                    });
+            }
+
+            function deleteEtel() {
+                const selected = document.querySelector("tbody > tr[data-selected='true']");
+
+                if (!selected) return;
+
+                fetch('/api/etelek', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: selected.dataset.id })
+                })
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(`${response.status}: ${response.statusText}`);
+                        }
+
+                        return response.json();
+                    })
+                    .then((data) => {
+                        alert(data.message);
+                        displayEtelek();
+                    })
+                    .catch((error) => console.error(error));
+            }
+        </script>
     </body>
 </html>

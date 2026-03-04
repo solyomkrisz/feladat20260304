@@ -41,4 +41,38 @@ router.get('/testsql', async (request, response) => {
     }
 });
 
+router.post('/etelek', upload.none(), async (request, response) => {
+    try {
+        await database.insertetel(request);
+        response
+            .status(200)
+            .json({ success: true, result: null, message: 'Étel sikeresen feltöltve' });
+    } catch (error) {
+        console.log(error);
+        response.status(500).json({ success: false, result: null, message: 'Valami hiba történt' });
+    }
+});
+
+router.get('/etelek', async (request, response) => {
+    try {
+        const result = await database.selectetelek();
+        response.status(200).json({ success: true, result, message: 'Étel sikeresen feltöltve' });
+    } catch (error) {
+        console.log(error);
+        response.status(500).json({ success: false, result: null, message: 'Valami hiba történt' });
+    }
+});
+
+router.delete('/etelek', async (request, response) => {
+    try {
+        await database.deleteetel(request);
+        response
+            .status(200)
+            .json({ success: true, result: null, message: 'Étel sikeresen törölve' });
+    } catch (error) {
+        console.log(error);
+        response.status(500).json({ success: false, result: null, message: 'Valami hiba történt' });
+    }
+});
+
 module.exports = router;
